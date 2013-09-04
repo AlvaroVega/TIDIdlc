@@ -1,0 +1,56 @@
+DEST_DIR     := ./bin
+
+OBJS_DIR     := ./source
+
+IDLC_SOURCES += source/es/tid/TIDIdlc/Arguments.java
+IDLC_SOURCES += source/es/tid/TIDIdlc/CompilerConf.java
+IDLC_SOURCES += $(shell find source/es/tid/TIDIdlc/async -name *.java)
+IDLC_SOURCES += $(shell find source/es/tid/TIDIdlc/idl2xml -name *.java)
+IDLC_SOURCES += $(shell find source/es/tid/TIDIdlc/xmlsemantics -name *.java)
+IDLC_SOURCES += $(shell find source/es/tid/TIDIdlc/xml2cpp -name *.java)
+IDLC_SOURCES += $(shell find source/es/tid/TIDIdlc/xml2java -name *.java)
+IDLC_SOURCES += $(shell find source/es/tid/TIDIdlc/xml2java/structures -name *.java)
+IDLC_SOURCES += $(shell find source/es/tid/TIDIdlc/xml2java/unions -name *.java)
+IDLC_SOURCES += $(shell find source/es/tid/TIDIdlc/util -name *.java)
+IDLC_SOURCES += source/es/tid/TIDIdlc/Idl2Cpp.java
+IDLC_SOURCES += source/es/tid/TIDIdlc/Idl2Java.java
+
+
+IDLC_OBJECTS := $(IDLC_SOURCES:source/%.java=$(OBJS_DIR)/%.o)
+
+GCJ       := gcj-4.3
+
+GCJ_FLAGS := -O9 --encoding=ISO-8859-1 -findirect-dispatch -Wl,--allow-multiple-definition
+LINK_FLAGS := -O9 -fCLASSPATH=$(CLASSPATH) -findirect-dispatch -Wl,--allow-multiple-definition
+
+# objects in $(DEST_DIR) don't get linked into the binary
+LINK_OBJECTS := $(foreach f, $(IDLC_OBJECTS), \
+                          $(if $(filter-out $(OBJS_DIR)/, $(dir $(f))), $f))
+
+IDL2CPP_BIN  := idl2cpp.bin
+IDL2JAVA_BIN := idl2java.bin
+
+BINARIES     := $(DEST_DIR)/$(IDL2CPP_BIN) $(DEST_DIR)/$(IDL2JAVA_BIN)
+
+
+
+all: $(BINARIES)
+
+build: clean all
+
+clean: 
+	 rm -rf $(BINARIES); rm -f $(IDLC_OBJECTS)
+
+$(IDLC_OBJECTS): $(OBJS_DIR)/%.o: source/%.java
+	$(GCJ) -fCLASSPATH=source/.class $(GCJ_FLAGS) -c $< -o $@
+
+$(DEST_DIR)/$(IDL2JAVA_BIN): $(LINK_OBJECTS)
+	$(GCJ) --main=es.tid.TIDIdlc.Idl2Java \
+	       -o $(DEST_DIR)/$(IDL2JAVA_BIN) $^ $(LINK_FLAGS)
+
+$(DEST_DIR)/$(IDL2CPP_BIN): $(LINK_OBJECTS)
+	$(GCJ) --main=es.tid.TIDIdlc.Idl2Cpp \
+	       -o $(DEST_DIR)/$(IDL2CPP_BIN) $^ $(LINK_FLAGS)
+
+
+

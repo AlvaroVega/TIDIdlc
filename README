@@ -1,0 +1,15 @@
+
+14/01/2005
+-----------------------------------------------------------------------------------------------------------------------------
+
+* Arreglado bug por el que no se podía leer un archivo *.idl si no estaba en el mismo directorio donde ejecuta el compilador.
+* Arreglado bug por el que no se devolvían los resultados en el directorio especificado por -output.
+* Arreglado bug #19: Duplicidad herencia CORBA::Object en herencia de interfaces.
+
+* Añadido método GetFileName() en la clase CompilerConf.
+* Añadido método SetFileName(String) en la clase CompilerConf.
+* Añadido método GetSequenceType(Element, String) en la clase XmlType2Cpp.
+
+* Añadido soporte preliminar para valueboxes. Se generan las definiciones especificadas en el mapping, a falta de
+  valueboxes de tipo Any.
+* Añadida configuración independiente de la plataforma (manifest) (Feature Request #21).

@@ -1,0 +1,2173 @@
+/*
+* MORFEO Project
+* http://www.morfeo-project.org
+*
+* Component: TIDIdlc
+* Programming Language: Java
+*
+* File: $Source: /cvsroot/morfeo/TIDIdlc/source/es/tid/TIDIdlc/idl2xml/IDL2-3.jj,v $
+* Version: $Revision: 1.2 $
+* Date: $Date: 2006/07/27 09:23:44 $
+* Last modified by: $Author: avega $
+*
+* (C) Copyright 2004 Telefónica Investigación y Desarrollo
+*     S.A.Unipersonal (Telefónica I+D)
+*
+* Info about members and contributors of the MORFEO project
+* is available at:
+*
+*   http://www.morfeo-project.org/TIDIdlc/CREDITS
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; either version 2 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+*
+* If you want to use this software an plan to distribute a
+* proprietary application in any way, and you are not licensing and
+* distributing your source code under GPL, you probably need to
+* purchase a commercial license of the product.  More info about
+* licensing options is available at:
+*
+*   http://www.morfeo-project.org/TIDIdlc/Licensing
+*/ 
+PARSER_BEGIN(Idl2Xml)
+
+package es.tid.TIDIdlc.idl2xml;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.FactoryConfigurationError;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
+import es.tid.TIDIdlc.CompilerConf;
+import es.tid.TIDIdlc.async.ExceptionHolderIdl;
+import es.tid.TIDIdlc.async.HandlerCompileThread;
+import es.tid.TIDIdlc.async.ReplyHandlerIdl;
+import es.tid.TIDIdlc.util.IncludeFileManager;
+
+/**
+ * Parser for idl files (CORBA2.6). Generates an Xml representation of the idl 
+ * file.
+ */
+public class Idl2Xml 
+    implements Idl2XmlNames {
+
+    static private Document dom;
+
+    static protected java.util.Stack scopes;
+
+    static protected java.util.Stack prefixes;
+
+    static protected String lastFile = null;
+
+    static private ReplyHandlerIdl handlerIdl;
+
+    static private ExceptionHolderIdl exceptionIdl;
+
+    static private String [] java_words = { "abstract", "boolean", "break", 
+                                           "byte", "case", "catch", "char", 
+                                           "class", "const", "continue", 
+                                           "default", "do", "double", "else", 
+                                           "extends", "final", "finally", 
+                                           "float", "for", "goto", "if", 
+                                           "implements", "import", "instanceof", 
+                                           "int", "interface", "long", "native", 
+                                           "new", "package", "private", 
+                                           "protected", "public", "return", 
+                                           "short", "static", "super", "switch",
+                                           "synchronized", "this", "throw", 
+                                           "throws", "transient", "try", "void", 
+                                           "volatile", "while", "true", "false", 
+                                           "null", "clone", "equals", 
+                                           "finalize", "getClass", "hashCode",
+                                           "notify", "notifyAll", "toString", 
+                                           "wait"};
+
+    static private String [] cpp_words = { "and", "and_eq", "asm", "auto", 
+                                          "bitand", "bitor", "bool","break", 
+                                          "case", "catch", "char", "class", 
+                                          "compl", "const", "const_cast", 
+                                          "continue", "default", "delete", "do", 
+                                          "double", "dynamic_cast", "else", 
+                                          "enum", "explicit", "export", 
+                                          "extern", "false", "float", "for", 
+                                          "friend", "goto", "if", "inline", 
+                                          "int", "long", "mutable", "namespace", 
+                                          "new", "not", "not_eq", "operator", 
+                                          "or", "or_eq", "private", "protected", 
+                                          "public", "register", 
+                                          "reinterpret_cast", "return", "short", 
+                                          "signed", "sizeof", "static", 
+                                          "static_cast", "struct", "switch", 
+                                          "template", "this", "throw", "true", 
+                                          "try", "typedef", "typeid", 
+                                          "typename", "union", "unsigned", 
+                                          "using", "virtual", "void", 
+                                          "volatile", "wchar_t", "while", "xor", 
+                                          "xor_eq" };
+
+    static private HashSet javawords = new HashSet(Arrays.asList(java_words));
+
+    static private HashSet cppwords = new HashSet(Arrays.asList(cpp_words));
+  
+
+    static private void initDom () {
+    	if (dom == null) {
+            try {
+                dom = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+            } catch (ParserConfigurationException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (FactoryConfigurationError e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+    	}
+    }
+
+
+    // introducida para poder lanzar varias compilaciones a través 
+    // del interfaz con ant
+    static public void clearAll() 
+    {
+        dom = null;
+        scopes = new java.util.Stack();
+        prefixes = new java.util.Stack();
+        lastFile = null;
+    }
+
+    /**
+     * @return DOM (Xml) representation of the Idl file.
+     * @throws IOException 
+     * @throws FileNotFoundException 
+     */
+    public Document parse() 
+        throws ParseException, FileNotFoundException, IOException 
+    {
+        // Argument -async
+        if (CompilerConf.getAsynchronous()) {
+            String handlerName = "handler.idl";
+            String exceptName = "exceptionHolder.idl";
+            if (CompilerConf.getFileName() != null) {
+                String idlName = CompilerConf.getFileName().substring(0, CompilerConf.getFileName().length()-4);
+                handlerName = idlName + "_" + handlerName;
+                exceptName = idlName + "_" + exceptName;
+            }
+           	String output_path = CompilerConf.getOutputPath();
+          	File output_dir = new File(output_path);
+          	if (!output_dir.exists())
+								output_dir.mkdirs();
+            handlerIdl = new ReplyHandlerIdl(CompilerConf.getOutputPath() + File.separator + handlerName);
+            exceptionIdl =  new ExceptionHolderIdl(CompilerConf.getOutputPath() + File.separator + exceptName);
+        }
+
+        clearAll();
+        specification();
+
+        // Argument -async
+        if (CompilerConf.getAsynchronous()) {
+        	handlerIdl.createIdlFile();
+        	exceptionIdl.createIdlFile();
+        }
+
+        return dom;
+    }
+  
+    protected static Element createChild(Node parent, String child) 
+    {
+	initDom ();
+        Element childElement = dom.createElement(child);
+        parent.appendChild(childElement);
+        return childElement;
+    }
+  
+    static protected void beginScope(Element el, String id) 
+    {
+        initDom ();
+        scopes.push(new Object[] { el,id });
+    }
+    
+    static protected void beginSpecificationScope()
+    {
+        initDom ();
+        Element specification = dom.createElement(OMG_specification);
+        scopes.push(new Object[] { specification, null });
+    }
+  
+    // At the end of a scope, a prefix defined in that scope must be
+    // erased from the prefixes stack
+    static protected void endScope() 
+    {
+        initDom ();
+        Object[] scps = (Object[]) scopes.pop();
+        Element el = (Element) scps[0];
+        if (!prefixes.empty()) {
+            // Object[] els = (Object[])prefixes.peek();
+            // System.out.println("Fin prefix: " + els[0]);
+            // System.out.println("En scope: " + els[1]);
+            // System.out.println("Actual scope: " + el);
+            // if (els[1] == el) {
+            prefixes.pop();
+            //   System.out.println("Fin prefix: " + els[0]);
+            //   System.out.println("En scope: " + els[1]);
+            // }
+        }
+    }
+    
+    static protected boolean newFile(int lineNumber, boolean modifyLastFile) 
+    {
+	initDom ();
+        String file = Preprocessor.getInstance().locateFile(lineNumber);
+        if (lastFile == null) {
+            if (modifyLastFile)
+    		lastFile = file;
+            return false;
+        }
+        boolean res = !(lastFile.equals(file));
+        if (modifyLastFile)
+            lastFile = file;
+        return res;
+    }
+  
+    static protected void usePrefix(Element el, Token actualToken) 
+    {
+        initDom ();
+        boolean isNewFile = newFile(actualToken.beginLine, true);
+        if (prefixes.empty()) 
+            return;
+        Object[] els = (Object[])prefixes.peek();
+        String prefix = (String)els[0];
+        Element prefixScope = (Element)els[1]; // the scope where the prefix appeared
+
+        if (isNewFile) { 
+            if (prefixScope.getTagName().equals(OMG_specification)) {
+      		Object [] scps = (Object []) scopes.peek();
+      		if ( ((Element) scps[0]).getTagName().equals(OMG_specification))
+                    scopes.pop();
+	      	else {
+                    Object [] scps_aux = (Object []) scopes.pop();
+                    scopes.pop(); // the OMG_specification element
+                    scopes.push(scps_aux); 
+	      	}
+	      	if (prefix != null) {
+                    prefixes.pop();
+                    prefixes.push(new Object[]{ null, prefixScope});
+                    els = (Object[])prefixes.peek();
+                    prefix = (String)els[0];
+                    prefixScope = (Element)els[1];
+	      	}
+            }
+            if (prefix != null) {
+     		Object [] scps = (Object [])scopes.peek();
+       		prefixes.push(new Object[]{ null, scps[0] });
+            }
+            else {
+        	prefixes.pop();
+            }
+            if (prefixes.empty()) 
+                return;
+            els = (Object[])prefixes.peek();
+            prefix = (String)els[0];
+            prefixScope = (Element)els[1];
+            String scopeSufix = getScopeSufix(el, prefixScope);
+            if (scopeSufix !=null)
+                if (prefix == null || prefix.equals(""))
+                    prefix = scopeSufix;
+                else
+                    prefix += "/" + scopeSufix;
+        }
+        else {
+            String scopeSufix = getScopeSufix(el, prefixScope);
+            if (scopeSufix !=null)
+                if (prefix == null || prefix.equals(""))
+                    prefix = scopeSufix;
+                else
+                    prefix += "/" + scopeSufix;
+        }
+        
+        el.setAttribute(OMG_prefix, prefix);
+    }
+ 
+  
+    // Searches the Element in the scopes stack.
+    // It returns the part of the RepositoryId name corresponding to
+    // the scopes, appending the names of the scopes in the stack until 
+    // the name of the scope in which the prefix appeared is founded.
+    // This sufix will be appended to the pragme prefix to obtain 
+    // the complete prefix.
+    
+    static protected String getScopeSufix(Element actualScope,
+                                          Element prefixScope)
+    {
+	initDom ();
+  	String scope = "";
+  	java.util.Stack scopesForPrefix = new java.util.Stack();
+  	Element e = null;
+  	Object [] scps;
+  	boolean restoreScopes = false;
+  	Object [] firstElement = (Object[]) scopes.peek();
+  	if (actualScope.equals((Element)firstElement[0])) {
+            // if the first element is the actualScope, if must not appear 
+            // in the sufix
+            firstElement = (Object[]) scopes.pop(); 
+            restoreScopes = true;
+  	}
+
+	if (scopes.empty()) // Arregla bug en includes complejos - 
+                            // difícil localizar su origen
+            beginSpecificationScope();
+        
+  	for (scps = (Object[]) scopes.peek(), e = (Element) scps[0]; 
+             !e.getTagName().equals(OMG_specification);
+             scps = (Object[])scopes.peek() , e = (Element) scps[0]) {
+            if (e.equals(prefixScope))
+                // if founded, exit from the loop
+                break;
+            else
+                scopesForPrefix.push(scopes.pop());
+  	}
+  	
+  	if (!scopesForPrefix.empty()) {
+            while (!scopesForPrefix.empty()) {
+                scps = (Object[]) scopesForPrefix.peek();
+                String id = (String) scps[1];
+                scope += id;
+                scopes.push((Object[]) scopesForPrefix.pop());
+                if (!scopesForPrefix.empty())
+                    scope += "/";
+            }
+            //System.err.println("ScopePrefix: " + scope);
+            if (restoreScopes) {
+                scopes.push(firstElement); // Return the first scope to the originary stack
+            }
+            return scope;
+  	}
+  	else {
+            if (restoreScopes) {
+                scopes.push(firstElement); // Return the first scope to the originary stack
+            }
+            return null;	
+  	}
+    }
+    
+    static protected String processReservedNames(String str)
+    {
+        initDom ();
+        if (CompilerConf.getCompilerType().equals("Java") 
+            && javawords.contains(str))
+            return "_" + str;
+        else if (CompilerConf.getCompilerType().equals("Cpp") 
+                 && cppwords.contains(str))
+            return "_cxx_" + str;
+        else
+            return str;
+    }
+    
+}
+
+
+PARSER_END(Idl2Xml)
+
+
+/*
+ * Tokens to ignore in the BNF follow.
+ */
+
+SKIP :
+{
+  < " " >
+| < "\t" >
+| < "\n" >
+| < "\r" >
+| < "//" (~["\n"])* "\n" >
+| <"/*" (~["*"])* "*" (~["/"] (~["*"])* "*")* "/">
+| < "#" ([" ","\t"])* (["0"-"9"])+
+    (([" ","\t"])* "\"" (~["\""])+ "\""
+           ([" ","\t"])* (["0"-"9"])* ([" ","\t"])* (["0"-"9"])*)? "\n" >
+}
+
+/* Production 1 */
+
+void specification() :
+  { initDom (); 
+    Element specification = createChild(dom, OMG_specification); }
+{
+    
+   {beginScope(specification, null);}
+   ( definition(specification) )+
+       <EOF>
+       }
+
+/* Production 2 */
+
+void definition(Element parent) :
+  { initDom (); }
+
+{
+  [( <PRAGMA_PREFIX> )+]
+  (
+      LOOKAHEAD(2) type_dcl(parent) ";"
+    | LOOKAHEAD(2) const_dcl(parent) ";"
+    | LOOKAHEAD(2) except_dcl(parent) ";"
+    | LOOKAHEAD(2) interfacex(parent) ";"
+    | LOOKAHEAD(2) module(parent) ";"
+    | LOOKAHEAD(2) value(parent) ";"
+  )
+}
+
+/* Production 3 */
+
+void module(Element parent) :
+  { initDom (); 
+    Element module = createChild(parent, OMG_module); 
+    String id; }
+{
+  "module" id=identifier() 
+  { module.setAttribute("line",Integer.toString(token.beginLine)); 
+    module.setAttribute("column",Integer.toString(token.beginColumn));
+
+    // Option -async
+    if (CompilerConf.st_asynchronous)  {
+        handlerIdl.addModule(id);
+        exceptionIdl.addModule(id);
+    }
+
+  }
+  "{" 
+   {beginScope(module,id);
+    usePrefix(module, token);} 
+  ( definition(module) )+ 
+   {endScope();} "}"
+   {module.setAttribute(OMG_name, id);
+    if (id.equals("org") || id.equals("omg") 
+        || IncludeORB.isHardCodedModule(id)) {
+        module.setAttribute(OMG_Do_Not_Generate_Code, "TRUE");
+    }
+    if (id.equals("java") || id.equals("rmi") || id.equals("io") 
+        || id.equals("lang")) { // DAVV - para interoperabilidad con JAVA RMI
+        String actualFile = "";
+        java.util.StringTokenizer tok = new java.util.StringTokenizer(lastFile, 
+                                                                      java.io.File.separator);
+        while (tok.hasMoreTokens()) {
+            actualFile = tok.nextToken();
+        }
+        if (actualFile.equals("orb.idl"))
+            module.setAttribute(OMG_Do_Not_Generate_Code, "TRUE");
+    }
+
+    String actualFile = "";
+    java.util.StringTokenizer tok = new java.util.StringTokenizer(lastFile,
+                                                                  java.io.File.separator);
+    while (tok.hasMoreTokens()) {
+        actualFile = tok.nextToken();
+    }
+    IncludeFileManager ifm = IncludeFileManager.getInstance();
+    ifm.addModuleToIdlFile(actualFile, id);
+    module.setAttribute("file_name", actualFile.toString());
+    
+   }
+}
+
+/* Production 4 */
+
+void interfacex(Element definition) :
+  { initDom (); 
+    Element interfacex = createChild(definition, OMG_interface);   
+    interfacex.setAttribute(OMG_fwd, OMG_true);
+    String id;
+  }
+{
+  id=forward_dcl(interfacex)
+  [
+    interface_dcl(interfacex,id)
+  ]
+      {
+       // Option -async
+       	if (CompilerConf.st_asynchronous) {
+            handlerIdl.addInterfaceForward(id, interfacex.getAttribute(OMG_abstract), 
+                                           interfacex.getAttribute(OMG_local));
+            exceptionIdl.addInterfaceForward(id, interfacex.getAttribute(OMG_abstract), 
+                                             interfacex.getAttribute(OMG_local));
+        }
+      }
+}
+
+/* Production 5 */
+
+void interface_dcl(Element interfacex, String id) :
+  { initDom (); }
+{
+  (
+    [ inheritance_spec(interfacex) ] 
+
+  { 
+    // Option -async
+    if (CompilerConf.st_asynchronous) {
+        handlerIdl.addInterface(id, interfacex.getAttribute(OMG_abstract), 
+                                interfacex.getAttribute(OMG_local));
+        exceptionIdl.addInterface(id, interfacex.getAttribute(OMG_abstract), 
+                                  interfacex.getAttribute(OMG_local));
+    } 
+
+  }
+    "{" 
+  { beginScope(interfacex, id);
+    usePrefix(interfacex, token);} 
+    interface_body(interfacex) 
+    {endScope();} "}"
+  )
+  {
+    interfacex.setAttribute(OMG_fwd, OMG_false);
+    interfacex.setAttribute("line", Integer.toString(token.beginLine));
+    interfacex.setAttribute("column", Integer.toString(token.beginColumn));
+  }
+}
+
+/* Production 6 */
+
+String forward_dcl(Element interfacex) :
+  { initDom (); 
+    String id; }
+{
+  [ "abstract"  
+    { interfacex.setAttribute(OMG_abstract, OMG_true); }
+  ]
+  [ "local"  
+    { interfacex.setAttribute(OMG_local, OMG_true); }
+  ]
+  "interface" id=identifier()
+  { interfacex.setAttribute(OMG_name, id);
+    interfacex.setAttribute("line", Integer.toString(token.beginLine)); 
+    interfacex.setAttribute("column", Integer.toString(token.beginColumn));  
+    return id; }
+}
+
+/* Production 7 */
+/*
+void interface_header(Element interfacex) :
+{
+  [ inheritance_spec(interfacex) ]
+}
+*/
+
+/* Production 8 */
+
+void interface_body(Element parent) :
+  { initDom (); } 
+
+{
+  ( export(parent) )*
+}
+
+/* Production 9 */
+
+void export(Element parent) :
+  { initDom (); } 
+{
+    type_dcl(parent) ";"
+  | const_dcl(parent) ";"
+  | except_dcl(parent) ";"
+  | attr_dcl(parent) ";"
+  | op_dcl(parent) ";"
+}
+
+/* Production 10 */
+
+void inheritance_spec(Element interfacex) :
+  { initDom (); 
+    Element inheritance_spec = createChild(interfacex, OMG_inheritance_spec); 
+    String inheritance; String id; }
+
+{ 
+  ":" inheritance=interface_name(inheritance_spec)
+  ( "," id=interface_name(inheritance_spec)
+			{inheritance = inheritance + "," + id; }  
+	)*
+
+   {
+    // Option -async
+    if (CompilerConf.st_asynchronous) {
+        handlerIdl.addInheritance(inheritance);
+        exceptionIdl.addInheritance(inheritance);
+    }
+   }
+
+}
+
+/* Production 11 */
+
+String interface_name(Element parent) :
+  { initDom (); String id;}
+{
+  id = scoped_name(parent)
+  {return id;}
+}
+
+/* Production 12 */
+
+String scoped_name(Element parent) :
+  { initDom (); 
+    String scoped_name = ""; 
+    String id; }
+{
+  [ "::" ] id=identifier() 
+  { scoped_name = scoped_name + id; }
+  ( "::" id=identifier()
+    { scoped_name = scoped_name + "::" + id; }
+  )*
+  { 
+    Element el = createChild(parent, OMG_scoped_name);
+    el.setAttribute(OMG_name, scoped_name); 
+    el.setAttribute("line", Integer.toString(token.beginLine)); 
+    el.setAttribute("column", Integer.toString(token.beginColumn)); 
+    return scoped_name;
+  }
+}
+
+
+/* Production 13 */
+
+void value(Element parent) :
+  { initDom (); }
+{  
+    LOOKAHEAD(4) value_dcl(parent)
+  | LOOKAHEAD(4) value_abs_dcl(parent)
+  | LOOKAHEAD(4) value_box_dcl(parent)
+  | LOOKAHEAD(4) value_forward_dcl(parent)
+}
+
+/* Production 14 */
+
+void value_forward_dcl(Element parent) :
+  { initDom (); 
+    Element el = createChild(parent, OMG_valuetype); 
+    String id; }
+{
+  [ "abstract" 
+    { el.setAttribute(OMG_abstract, OMG_true); }
+  ] "valuetype" id=identifier()
+  { el.setAttribute(OMG_name, id);
+    el.setAttribute("line", Integer.toString(token.beginLine)); 
+    el.setAttribute("column", Integer.toString(token.beginColumn)); 
+    el.setAttribute(OMG_fwd, OMG_true);
+  }
+}
+
+/* Production 15 */
+
+void value_box_dcl(Element parent) :
+  { initDom (); 
+    Element el = createChild(parent, OMG_valuetype); 
+    String id; }
+{
+  "valuetype" id=identifier()
+  {
+    el.setAttribute("line", Integer.toString(token.beginLine)); 
+    el.setAttribute("column", Integer.toString(token.beginColumn)); 
+    el.setAttribute(OMG_boxed, OMG_true);
+  }
+   type_spec(el)
+  { el.setAttribute(OMG_name, id); }
+}
+
+/* Production 16 */
+
+void value_abs_dcl(Element parent) :
+ {  initDom (); 
+    Element el = createChild(parent, OMG_valuetype); 
+    el.setAttribute(OMG_abstract, OMG_true);
+    String id; }
+{
+  "abstract" "valuetype" id=identifier()
+  {
+    el.setAttribute("line", Integer.toString(token.beginLine)); 
+    el.setAttribute("column", Integer.toString(token.beginColumn));  
+  }
+    value_inheritance_spec(el)
+    "{" ( export(el) )* "}"
+  { el.setAttribute(OMG_name, id); }
+}
+
+/* Production 17 */
+
+void value_dcl(Element parent) :
+ {  initDom (); 
+    Element el = createChild(parent, OMG_valuetype); 
+    el.setAttribute("line", Integer.toString(token.beginLine)); 
+    el.setAttribute("column", Integer.toString(token.beginColumn)); }
+{
+    value_header(el)
+    "{" ( value_element(el) )* "}"
+}
+
+/* Production 18 */
+
+void value_header(Element parent) :
+ {  initDom (); 
+    String id; }
+{
+  [ "custom" 
+    { parent.setAttribute(OMG_custom, OMG_true); }
+  ] "valuetype" id=identifier() 
+  {
+    parent.setAttribute("line", Integer.toString(token.beginLine)); 
+    parent.setAttribute("column", Integer.toString(token.beginColumn));
+  }
+  value_inheritance_spec(parent)
+  { parent.setAttribute(OMG_name, id); }
+}
+
+/* Production 19 */
+
+void value_inheritance_spec(Element parent) :
+ {  initDom (); 
+    Element el = createChild(parent, OMG_value_inheritance_spec); }
+{
+  [ ":" [ "truncatable" 
+          { el.setAttribute(OMG_truncatable, OMG_true); }
+        ] value_name(el) ( "," value_name(el) )* ]
+  [ { Element sup = createChild(el, OMG_supports); }
+    "supports" interface_name(sup) ("," interface_name(sup) )* ]
+}
+
+/* Production 20 */
+
+void value_name(Element parent) :
+ {  initDom (); }
+{
+  scoped_name(parent)
+}
+
+/* Production 21 */
+
+void value_element(Element parent) :
+ {  initDom (); }
+{
+    export(parent)
+  | state_member(parent)
+  | init_dcl(parent)
+}
+
+/* Production 22 */
+
+void state_member(Element parent) :
+ {  initDom (); 
+    Element el = createChild(parent, OMG_state_member); }
+{
+  (   "public"   
+    { el.setAttribute(OMG_kind, OMG_public);
+      el.setAttribute("line", Integer.toString(token.beginLine)); 
+      el.setAttribute("column", Integer.toString(token.beginColumn));
+    }
+    | "private"  
+    { el.setAttribute(OMG_kind, OMG_private);
+      el.setAttribute("line", Integer.toString(token.beginLine)); 
+      el.setAttribute("column", Integer.toString(token.beginColumn));
+     }
+  )
+  type_spec(el) declarators(el) ";"
+}
+
+/* Production 23 */
+
+void init_dcl(Element parent) :
+ {  initDom ();
+    Element el = createChild(parent, OMG_factory); 
+    String id; }
+{
+  "factory" id=identifier() 
+  {
+    el.setAttribute("line", Integer.toString(token.beginLine)); 
+    el.setAttribute("column", Integer.toString(token.beginColumn));
+  }
+  "(" [ init_param_decls(el) ] ")" ";"
+  { el.setAttribute(OMG_name,id); }
+}
+
+/* Production 24 */
+
+void init_param_decls(Element parent) :
+ {  initDom (); }
+{
+    init_param_decl(parent) ( "," init_param_decl(parent) )*
+}
+
+/* Production 25 */
+
+void init_param_decl(Element parent) :
+ {  initDom (); 
+    Element el = createChild(parent, OMG_init_param_decl); 
+    String id; }
+{
+  init_param_attribute(el) param_type_spec(el) id=simple_declarator()
+  { 
+    el.setAttribute(OMG_name, id);
+    el.setAttribute("line", Integer.toString(token.beginLine));
+    el.setAttribute("column", Integer.toString(token.beginColumn));
+  }
+}
+
+/* Production 26 */
+
+void init_param_attribute(Element parent) :
+ {  initDom (); 
+    parent.setAttribute(OMG_kind, "in"); }
+{
+  "in"  
+}
+
+/* Production 27 */
+
+void const_dcl(Element parent) :
+ {  initDom (); 
+    Element el = createChild(parent, OMG_const_dcl); 
+    String id; }
+{
+  "const" const_type(el) id=identifier()
+  {
+    el.setAttribute("line", Integer.toString(token.beginLine));
+    el.setAttribute("column", Integer.toString(token.beginColumn));
+  }
+   "=" const_exp(el)
+  { el.setAttribute(OMG_name, id); }
+}
+
+/* Production 28 */
+
+void const_type(Element parent) :
+ {  initDom (); 
+    String id = null; }
+{ (
+      LOOKAHEAD(2) id=floating_pt_type()
+    | id=integer_type()
+    | id=char_type()
+    | id=wide_char_type()
+    | id=boolean_type()
+    | string_type(parent)
+    | wide_string_type(parent)
+    | fixed_pt_const_type(parent)
+    | scoped_name(parent)
+    | id=octet_type()
+  )
+  { 
+    if (id != null) {
+      Element type = createChild(parent, OMG_type); 
+      type.setAttribute(OMG_kind, id);
+      type.setAttribute("line",Integer.toString(token.beginLine));
+      type.setAttribute("column",Integer.toString(token.beginColumn)); 
+    }
+  }
+}
+
+/* Production 29 */
+
+void const_exp(Element parent) :
+ {  initDom (); 
+    Element expr = createChild(parent, OMG_expr); 
+    Element el; }
+{
+  el=or_expr()
+  { expr.appendChild(el); }
+}
+
+/* Production 30 */
+
+Element or_expr() :
+ {  initDom (); 
+    Element left=null, right=null; }
+{
+  left=xor_expr() right=or_expr1(left)
+  { return right; }
+}
+
+Element or_expr1(Element el) :
+ {  initDom (); 
+    Element left=null, right=null, expr=null; }
+{
+  [ "|" left=xor_expr()
+    {
+      expr = dom.createElement(OMG_or);
+      expr.appendChild(el);
+      expr.appendChild(left);
+    }
+    right=or_expr1(expr) ]
+  { if (right == null) return el; else return right; }
+}
+
+/* Production 31 */
+
+Element xor_expr() :
+ {  initDom (); 
+    Element left=null, right=null; }
+{
+  left=and_expr() right=xor_expr1(left)
+  { return right; }
+}
+
+Element xor_expr1(Element el) :
+ {  initDom (); 
+    Element left=null, right=null, expr=null; }
+{
+  [ "^" left=and_expr()
+    {
+      expr = dom.createElement(OMG_xor);
+      expr.appendChild(el);
+      expr.appendChild(left);
+    }
+    right=xor_expr1(expr) ]
+  { if (right == null) return el; else return right; }
+}
+
+
+
+/* Production 32 */
+
+Element and_expr() :
+ {  initDom (); 
+    Element left=null, right=null; }
+{
+  left=shift_expr() right=and_expr1(left)
+  { return right; }
+}
+
+Element and_expr1(Element el) :
+ {  initDom (); 
+    Element left=null, right=null, expr=null; }
+{
+  [ "&" left=shift_expr()
+    {
+      expr = dom.createElement(OMG_and);
+      expr.appendChild(el);
+      expr.appendChild(left);
+    }
+    right=and_expr1(expr) ]
+  { if (right == null) return el; else return right; }
+}
+
+
+/* Production 33 */
+
+Element shift_expr() :
+ {  initDom (); 
+    Element left=null, right=null; }
+{
+  left=add_expr() right=shift_expr1(left)
+  { return right; }
+}
+
+Element shift_expr1(Element el) :
+ {  initDom (); 
+    Element left=null, right=null, expr=null; String op = null; }
+{
+  [ ( ">>" {op=OMG_shiftR;} | "<<" {op=OMG_shiftL;} ) left=add_expr()
+    {
+      expr = dom.createElement(op);
+      expr.appendChild(el);
+      expr.appendChild(left);
+    }
+    right=shift_expr1(expr) ]
+  { if (right == null) return el; else return right; }
+}
+
+/* Production 34 */
+
+Element add_expr() :
+ {  initDom (); 
+    Element left=null, right=null; }
+{
+  left=mult_expr() right=add_expr1(left)
+  { return right; }
+}
+
+Element add_expr1(Element el) :
+ {  initDom ();
+    Element left=null, right=null, expr=null; 
+    String op = null; }
+{
+  [ ( "+" {op=OMG_plus;} | "-" {op=OMG_minus;} ) left=mult_expr()
+    {
+      expr = dom.createElement(op);
+      expr.appendChild(el);
+      expr.appendChild(left);
+    }
+    right=add_expr1(expr) ]
+  { if (right == null) return el; else return right; }
+}
+
+
+
+/* Production 35 */
+
+Element mult_expr() :
+ {  initDom ();
+    Element left=null, right=null; }
+{
+  left=unary_expr() right=mult_expr1(left)
+  { return right; }
+}
+
+Element mult_expr1(Element el) :
+ {  initDom ();
+    Element left=null, right=null, expr=null; 
+    String op = null; }
+{
+  [ ( "*" {op=OMG_times;} | "/" {op=OMG_div;} | "%" {op=OMG_mod;} ) left=unary_expr()
+    {
+      expr = dom.createElement(op);
+      expr.appendChild(el);
+      expr.appendChild(left);
+    }
+    right=mult_expr1(expr) ]
+  { if (right == null) return el; else return right; }
+}
+
+
+
+/* Production 36 */
+
+Element unary_expr() :
+ {  initDom ();
+    Element el; 
+    String id=null; }
+{
+  [ id=unary_operator() ] el=primary_expr()
+  {
+    if (id==null) {
+      return (Element)el.getFirstChild();
+    } else {
+      Element operator = dom.createElement(id);
+      operator.appendChild((Element)el.getFirstChild());
+      return operator;
+    }
+  }
+}
+
+/* Production 37 */
+String unary_operator() :
+ {  initDom (); }
+{
+    "-" { return OMG_minus; }
+  | "+" { return OMG_plus; }
+  | "~" { return OMG_not; }
+}
+
+/* Production 38 */
+
+Element primary_expr() :
+ {  initDom (); 
+    Element el = dom.createElement("aux"); }
+{
+  (
+      scoped_name(el)
+    | literal(el)
+    | "(" const_exp(el) ")"
+  )
+  { return el; }
+}
+
+/* Production 39 */
+
+void literal(Element parent) :
+ {  initDom (); }
+{
+    integer_literal(parent)
+  | string_literal(parent)
+  | wide_string_literal(parent)
+  | character_literal(parent)
+  | wide_character_literal(parent)
+  | fixed_pt_literal(parent)
+  | floating_pt_literal(parent)
+  | boolean_literal(parent)
+}
+
+/* Production 40 */
+
+void boolean_literal(Element parent) :
+ {  initDom (); 
+    Element el = createChild(parent, OMG_boolean_literal); }
+{
+    "TRUE"  { 
+      el.setAttribute(OMG_value, token.image);
+      el.setAttribute("line", Integer.toString(token.beginLine));
+      el.setAttribute("column", Integer.toString(token.beginColumn));
+			}
+  | "FALSE" { 
+      el.setAttribute(OMG_value, token.image);
+      el.setAttribute("line", Integer.toString(token.beginLine));
+      el.setAttribute("column", Integer.toString(token.beginColumn));
+  }
+}
+
+/* Production 41 */
+
+void positive_int_const(Element parent) :
+ {  initDom (); }
+{
+  const_exp(parent)
+}
+
+/* Production 42 */
+
+void type_dcl(Element parent) :
+ {  initDom (); 
+    String id; }
+{
+    "typedef" type_declarator(parent)
+  | struct_type(parent)
+  | union_type(parent)
+  | enum_type(parent)
+  | "native" native_declarator(parent)
+}
+
+/* Production 43 */
+
+void type_declarator(Element parent) :
+ {  initDom (); 
+    Element el = dom.createElement(OMG_typedef); 
+    el.setAttribute("line", Integer.toString(token.beginLine));
+    el.setAttribute("column", Integer.toString(token.beginColumn));   
+}
+{
+//  Original:
+//    type_spec(el) declarators(el)
+//  This production rule has been changed to break the
+//  typedef of complex types (enum, union & struct) in two steps,
+//  which is easer for semantics.
+  (
+      simple_type_spec(el)
+    | (  struct_type(parent)
+       | union_type(parent)
+       | enum_type(parent)      
+      )
+      {
+        Element el2 = createChild(el, OMG_scoped_name);
+        el2.setAttribute(OMG_name,((Element)parent.getLastChild()).getAttribute(OMG_name));
+        el2.setAttribute("line", Integer.toString(token.beginLine));
+        el2.setAttribute("column", Integer.toString(token.beginColumn));   
+      }
+  ) declarators(el)      
+  {
+    usePrefix(el, token);
+    parent.appendChild(el);
+  }
+}
+
+/* Production 44 */
+
+void type_spec(Element parent) :
+ {  initDom (); }
+{
+    simple_type_spec(parent)
+  | constr_type_spec(parent)
+}
+
+/* Production 45 */
+
+void simple_type_spec(Element parent) :
+ {  initDom (); }
+{
+    base_type_spec(parent)
+  | template_type_spec(parent)
+  | scoped_name(parent)
+}
+
+/* Production 46 */
+
+String base_type_spec(Element parent) :
+ {  initDom (); 
+    Element type = createChild(parent, OMG_type); 
+    String id = null;} 
+{
+  (
+      LOOKAHEAD(2) id=floating_pt_type()
+    | id=integer_type()
+    | id=char_type()
+    | id=wide_char_type()
+    | id=boolean_type()
+    | id=octet_type()
+    | id=any_type()
+    | id=object_type()
+    | id=value_base_type()
+    | id=typecode_type()		//Añadida para tratar el tipo CORBA::TypeCode	
+    | id=abstract_base_type(type)   //Añadida para tratar el tipo CORBA::AbstractBase
+
+  )
+  { if (id!=null) type.setAttribute(OMG_kind,id); 
+  	return id; }
+}
+
+/* Production 47 */
+
+void template_type_spec(Element parent) :
+ {  initDom (); }
+{
+    sequence_type(parent)
+  | string_type(parent)
+  | wide_string_type(parent)
+  | fixed_pt_type(parent)
+}
+
+/* Production 48 */
+
+void constr_type_spec(Element parent) :
+ {  initDom (); }
+{
+    struct_type(parent)
+  | union_type(parent)
+  | enum_type(parent)
+}
+
+/* Production 49 */
+
+void declarators(Element parent) :
+ {  initDom (); }
+{
+  declarator(parent) ( "," declarator(parent) )*
+}
+
+/* Production 50 */
+
+void declarator(Element parent) :
+ {  initDom (); 
+    String id; }
+{
+    LOOKAHEAD(2) complex_declarator(parent)
+  | id=simple_declarator() 
+    {   Element el = createChild(parent, OMG_simple_declarator); 
+        el.setAttribute(OMG_name, id);
+        el.setAttribute("line",Integer.toString(token.beginLine));
+        el.setAttribute("column",Integer.toString(token.beginColumn)); }
+}
+
+/* Production 51 */
+
+String simple_declarator() :
+ {  initDom (); 
+    String id; }
+{
+  id=identifier()
+  { return id; }
+}
+
+/* Production 52 */
+
+void complex_declarator(Element parent) :
+ {  initDom (); }
+{
+  array_declarator(parent)
+}
+
+/* Production 53 */
+
+String floating_pt_type() :
+ {  initDom (); }
+{
+    "float"  { return OMG_float; }
+  | "double"  { return OMG_double; }
+  | "long" "double" { return OMG_longdouble; }
+}
+
+/* Production 54 */
+
+String integer_type() :
+ {  initDom (); 
+    String id; }
+{
+  (
+      id=signed_int()
+    | id=unsigned_int()
+  )
+  { return id; }
+}
+
+/* Production 55 */
+
+String signed_int() :
+ {  initDom (); 
+    String id; }
+{
+  (
+      LOOKAHEAD(2) id=signed_longlong_int()
+    | LOOKAHEAD(2) id=signed_long_int()
+    | LOOKAHEAD(2) id=signed_short_int()
+  )
+  { return id; }
+}
+
+/* Production 56 */
+
+String signed_short_int() :
+ {  initDom (); }
+{
+  "short" { return OMG_short; }
+}
+
+/* Production 57 */
+
+String signed_long_int() :
+ {  initDom (); }
+{
+  "long" { return OMG_long; }
+}
+
+/* Production 58 */
+
+String signed_longlong_int() :
+ {  initDom (); }
+{
+  "long" "long" { return OMG_longlong; }
+}
+
+/* Production 59 */
+
+String unsigned_int() :
+ {  initDom (); 
+    String id; }
+{  
+  (
+      LOOKAHEAD(3) id=unsigned_longlong_int()
+    | LOOKAHEAD(3) id=unsigned_long_int()
+    | LOOKAHEAD(3) id=unsigned_short_int()
+  )
+  { return id; }
+}
+
+/* Production 60 */
+
+String unsigned_short_int() :
+ {  initDom (); }
+{
+  "unsigned" "short" { return OMG_unsignedshort; }
+}
+
+/* Production 61 */
+
+String unsigned_long_int() :
+ {  initDom (); }
+{
+  "unsigned" "long" { return OMG_unsignedlong; }
+}
+
+/* Production 62 */
+
+String unsigned_longlong_int() :
+ {  initDom (); }
+{
+  "unsigned" "long" "long" { return OMG_unsignedlonglong; }
+}
+
+/* Production 63 */
+
+String char_type() :
+ {  initDom (); }
+{
+  "char" { return OMG_char; }
+}
+
+/* Production 64 */
+
+String wide_char_type() :
+ {  initDom (); }
+{
+  "wchar"  { return OMG_wchar; }
+}
+
+/* Production 65 */
+
+String boolean_type() :
+ {  initDom (); }
+{
+  "boolean" { return OMG_boolean; }
+}
+
+/* Production 66 */
+
+String octet_type() :
+ {  initDom (); }
+{
+  "octet"  { return OMG_octet; }
+}
+
+/* Production 67 */
+
+String any_type() :
+ {  initDom (); }
+{
+  "any"  { return OMG_any; }
+}
+
+/* Production 68 */
+
+String object_type() :
+ {  initDom (); }
+{
+  "Object"  { return OMG_Object; }
+}
+
+/* Production 69 */
+
+void struct_type(Element parent) :
+ {  initDom (); 
+    Element type = createChild(parent, OMG_struct);
+    type.setAttribute(OMG_fwd, OMG_true);
+    type.setAttribute("line", Integer.toString(token.beginLine));
+    type.setAttribute("column", Integer.toString(token.beginColumn));
+    String id; }
+{
+  id=struct_forward_decl(type)
+  [
+  "{" 
+  { beginScope(type,id);usePrefix(type, token);} 
+    member_list(type) 
+  { endScope();} "}"
+  { type.setAttribute(OMG_fwd,OMG_false);}
+  ]
+}
+
+/* Production 70 */
+
+void member_list(Element parent) :
+ {  initDom (); }
+{
+  ( member(parent) )+
+}
+
+/* Production 71 */
+
+void member(Element parent) :
+ {  initDom (); }
+{
+  type_spec(parent) declarators(parent) ";"
+}
+
+/* Production 72 */
+
+void union_type(Element parent) :
+ {  initDom (); 
+    Element type = createChild(parent, OMG_union);
+    type.setAttribute(OMG_fwd, OMG_true);
+    type.setAttribute("line", Integer.toString(token.beginLine));
+    type.setAttribute("column", Integer.toString(token.beginColumn));
+    String id; }
+{
+  id=union_forward_decl(type)
+  [
+  "switch" 
+  "(" 
+  {   beginScope(type,id); 
+      usePrefix(type, token);} 
+    switch_type_spec(type) ")" "{" switch_body(type) 
+  {   endScope();} "}"
+  {   type.setAttribute(OMG_fwd, OMG_false); }
+  ]
+}
+
+/* Production 73 */
+
+void switch_type_spec(Element parent) :
+ {  initDom (); 
+    Element el = createChild(parent, OMG_switch);
+    String id = null; }
+{
+  (
+      id=integer_type()
+    | id=char_type()
+    | id=boolean_type()
+    | enum_type(el)
+    | scoped_name(el)
+  )
+  { 
+    if (id != null) {
+      Element type = createChild(el, OMG_type); 
+      type.setAttribute(OMG_kind, id);
+      type.setAttribute("line", Integer.toString(token.beginLine));
+      type.setAttribute("column", Integer.toString(token.beginColumn)); 
+    }
+  }
+}
+
+/* Production 74 */
+
+void switch_body(Element parent) :
+ {  initDom (); }
+{
+  ( casex(parent) )+
+}
+
+/* Production 75 */
+
+void casex(Element parent) :
+ {  initDom (); 
+    Element el = createChild(parent, OMG_case); }
+{
+  ( case_label(el) )+ element_spec(el) ";"
+}
+
+/* Production 76 */
+
+void case_label(Element parent) :
+ {  initDom (); }
+{
+    "case" const_exp(parent) ":"
+  | "default" ":"
+}
+
+/* Production 77 */
+
+void element_spec(Element parent) :
+ {  initDom (); 
+    Element el = createChild(parent, OMG_element_spec); }
+{
+  type_spec(el) declarator(el)
+}
+
+/* Production 78 */
+
+void enum_type(Element parent) :
+ {  initDom (); 
+    Element type = createChild(parent, OMG_enum);
+    String id; }
+{
+  "enum" id=identifier() 
+  {
+    type.setAttribute("line",Integer.toString(token.beginLine));
+    type.setAttribute("column",Integer.toString(token.beginColumn));
+  }
+  "{" { 
+    usePrefix(type, token); } enumerator(type) ( "," enumerator(type) )* "}"
+  { type.setAttribute(OMG_name, id); }
+}
+
+/* Production 79 */
+
+void enumerator(Element parent) :
+ {  initDom (); 
+    Element type = createChild(parent, OMG_enumerator); 
+    String id; }
+{
+  id=identifier()
+  { type.setAttribute(OMG_name, id);
+    type.setAttribute("line", Integer.toString(token.beginLine));
+    type.setAttribute("column", Integer.toString(token.beginColumn));
+  }
+}
+
+/* Production 80 */
+
+void sequence_type(Element parent) :
+ {  initDom (); 
+    Element type = createChild(parent, OMG_sequence); }
+{
+  "sequence" "<" simple_type_spec(type) [ "," positive_int_const(type) ] ">"
+}
+
+/* Production 81 */
+
+String string_type(Element parent) :
+ {  initDom (); 
+    Element type = createChild(parent, OMG_type);
+    type.setAttribute(OMG_kind, OMG_string); }
+{
+  "string" [ "<" positive_int_const(type) ">" ]
+  {return OMG_string;}
+}
+
+/* Production 82 */
+
+String wide_string_type(Element parent) :
+ {  initDom (); 
+    Element type = createChild(parent, OMG_type);
+    type.setAttribute(OMG_kind, OMG_wstring); }
+{
+  "wstring" [ "<" positive_int_const(type) ">" ]
+{   return OMG_wstring; }
+}
+
+/* Production 83 */
+
+void array_declarator(Element parent) :
+ {  initDom (); 
+    Element el = createChild(parent, OMG_array); 
+    String id; }
+{
+  id=identifier()
+  {
+    el.setAttribute("line", Integer.toString(token.beginLine));
+    el.setAttribute("column", Integer.toString(token.beginColumn));
+  }
+   ( fixed_array_size(el) )+
+  { el.setAttribute(OMG_name, id); }
+}
+
+/* Production 84 */
+
+void fixed_array_size(Element parent) :
+ {  initDom (); }
+{
+  "[" positive_int_const(parent) "]"
+}
+
+/* Production 85 */
+
+void attr_dcl(Element parent) :
+ {  initDom (); 
+    Element el = createChild(parent, OMG_attr_dcl);
+    String id, type; 
+    String id2; 
+    Element el2, el3; }
+{
+  [ "readonly"
+    { el.setAttribute(OMG_readonly, OMG_true); }
+  ] "attribute" type=param_type_spec(el) id=simple_declarator()
+  { el2 = createChild(el, OMG_attribute);
+    el2.setAttribute(OMG_name, id);
+    el2.setAttribute("line", Integer.toString(token.beginLine));
+    el2.setAttribute("column", Integer.toString(token.beginColumn)); }
+
+  {
+    // Option -async
+    if (CompilerConf.st_asynchronous) {
+        handlerIdl.addAttribute(id, type, el.getAttribute(OMG_readonly));
+        exceptionIdl.addAttribute(id, type, el.getAttribute(OMG_readonly));
+    }
+
+  }
+
+  ( "," id2=simple_declarator() 
+    { el3 = createChild(el, OMG_attribute);
+      el3.setAttribute(OMG_name, id2);
+      el3.setAttribute("line", Integer.toString(token.beginLine));
+      el3.setAttribute("column", Integer.toString(token.beginColumn));
+
+      // Option -async
+      if (CompilerConf.st_asynchronous) {
+          handlerIdl.addAttribute(id2, type, el.getAttribute(OMG_readonly));
+          exceptionIdl.addAttribute(id2, type, el.getAttribute(OMG_readonly));
+      }
+    }
+  )*
+}
+
+/* Production 86 */
+
+void except_dcl(Element parent) :
+ {  initDom (); 
+    Element el = createChild(parent, OMG_exception);
+    String id; }
+{
+  "exception" id=identifier()
+  {
+    el.setAttribute("line", Integer.toString(token.beginLine));
+    el.setAttribute("column", Integer.toString(token.beginColumn));
+  }
+  "{" 
+  { beginScope(el,id);
+    usePrefix(el, token);}
+    ( member(el) )* 
+  { endScope();} "}"
+  { el.setAttribute(OMG_name, id); 
+    // Option -async
+    if (CompilerConf.st_asynchronous && parent.getTagName().equals(OMG_interface)) {
+        exceptionIdl.addExceptionDclInterface(id);
+    }
+
+  }
+}
+
+/* Production 87 */
+
+void op_dcl(Element parent) :
+ {  initDom (); 
+    Element op_dcl = createChild(parent, OMG_op_dcl); 
+    String id, type;
+}
+{
+  [ op_attribute(op_dcl) ]
+  type=op_type_spec(op_dcl)
+  id=identifier()
+  {
+    op_dcl.setAttribute("line", Integer.toString(token.beginLine));
+    op_dcl.setAttribute("column", Integer.toString(token.beginColumn));
+
+    // Option -async and isn´t a oneway operation
+    if (CompilerConf.st_asynchronous && op_dcl.getAttribute(OMG_oneway).compareTo(OMG_true) != 0) { 
+        handlerIdl.addOperation(id, type);
+        exceptionIdl.addOperation(id, type);
+    }
+
+  }
+  parameter_dcls(op_dcl)
+  [ raises_expr(op_dcl) ]
+  [ context_expr(op_dcl) ]
+  
+  { op_dcl.setAttribute(OMG_name, id); }
+}
+
+/* Production 88 */
+
+void op_attribute(Element parent) :
+ {  initDom (); 
+    parent.setAttribute(OMG_oneway, OMG_true); }
+{
+  "oneway"
+}
+
+/* Production 89 */
+
+String op_type_spec(Element parent) :
+ {  initDom (); 
+    Element returnType = createChild(parent, OMG_returnType); 
+    String ret = null; }
+{
+  (
+    ret=param_type_spec(returnType)
+  | "void"
+    )
+  { return ret; }
+
+}
+
+/* Production 90 */
+
+void parameter_dcls(Element parent) :
+ {  initDom (); }
+{
+  "(" /*{beginScope(parent);} */
+    [ param_dcl(parent) ( "," param_dcl(parent) )* ] 
+  /*{endScope();}*/ ")"
+}
+
+/* Production 91 */
+
+void param_dcl(Element parent) :
+ {  initDom (); 
+    Element param = createChild(parent, OMG_parameter);
+    String id, id2, type; }
+{
+  id=param_attribute() type=param_type_spec(param) id2=simple_declarator()
+  {
+    param.setAttribute(OMG_kind, id);
+    param.setAttribute(OMG_name, id2);
+    param.setAttribute("line",Integer.toString(token.beginLine));
+    param.setAttribute("column",Integer.toString(token.beginColumn));
+    
+    // Option -async and isn´t a oneway operation
+    if (CompilerConf.st_asynchronous && parent.getAttribute(OMG_oneway).compareTo(OMG_true) != 0) 
+            handlerIdl.addParameterOper(id2, type, id);
+  }
+}
+
+/* Production 92 */
+
+String param_attribute() :
+ {  initDom (); }
+{ (
+      "in"
+    | "out"
+    | "inout"
+  )
+  { return token.image; }
+}
+
+/* Production 93 */
+
+void raises_expr(Element parent) :
+ {  initDom (); 
+    Element raises = createChild(parent, OMG_raises); 
+    String excep; }
+
+{
+  "raises" "(" excep=scoped_name(raises) 
+   {
+    // Option -async and isn't a oneway operation
+    if (CompilerConf.st_asynchronous && parent.getAttribute(OMG_oneway).compareTo(OMG_true) != 0) { 
+      	exceptionIdl.addExceptionOper(excep);
+    }
+   }
+
+  ( "," excep=scoped_name(raises) 
+     {
+      // Option -async and isn't a oneway operation
+      if (CompilerConf.st_asynchronous && parent.getAttribute(OMG_oneway).compareTo(OMG_true) != 0) { 
+        	exceptionIdl.addExceptionOper(excep);
+      }
+     }
+    )* ")"
+
+}
+
+/* Production 94 */
+
+void context_expr(Element parent) :
+ {  initDom (); 
+    Element raises = createChild(parent, OMG_context); }
+{
+  "context" "(" string_literal(parent) ( "," string_literal(parent) )* ")"
+}
+
+/* Production 95 */
+
+String param_type_spec(Element parent) :
+ {  initDom (); 
+    String id; }
+{ (
+    id=string_type(parent)
+  | id=wide_string_type(parent)
+  | id=scoped_name(parent)
+  | id=base_type_spec(parent)
+  )
+
+ {
+   return id;
+ }
+
+}
+
+/* Production 96 */
+
+void fixed_pt_type(Element parent) :
+ {  initDom (); 
+    Element type = createChild(parent, OMG_type);
+    type.setAttribute(OMG_kind, OMG_fixed); }
+{
+  "fixed" "<" positive_int_const(type) "," positive_int_const(type) ">"
+}
+
+/* Production 97 */
+
+void fixed_pt_const_type(Element parent) :
+ {  initDom (); 
+    Element type = createChild(parent, OMG_type);
+    type.setAttribute(OMG_kind, OMG_fixed); }
+{
+  "fixed"
+}
+
+/* Production 98 */
+
+String value_base_type() :
+ {  initDom (); }
+{
+  "ValueBase"  
+  { return OMG_ValueBase; }
+}
+
+/* Production 99 */
+
+String struct_forward_decl(Element type) :
+ {  initDom (); 
+    String id; }
+{
+  "struct" id=identifier()
+  {
+    type.setAttribute(OMG_name, id); 
+    type.setAttribute("line",Integer.toString(token.beginLine));
+    type.setAttribute("column",Integer.toString(token.beginColumn));
+    return id;
+  }
+}
+
+String union_forward_decl(Element type) :
+ {  initDom (); 
+    String id; }
+{
+  "union" id=identifier() 
+  {
+    type.setAttribute(OMG_name, id); 
+    type.setAttribute("line", Integer.toString(token.beginLine));
+    type.setAttribute("column", Integer.toString(token.beginColumn));
+    return id;
+  }
+}
+  
+/* Extra Production for TypeCode */
+
+String typecode_type() :
+ {  initDom (); }
+{
+  "CORBA::TypeCode"  
+  { return OMG_TypeCode; }
+}
+
+/* Extra Production for AbstractBase */
+void native_declarator(Element parent) :
+ {  initDom (); 
+    String id;
+ }
+{
+ LOOKAHEAD(2) id =abstract_base_dcl()
+ {    Element type = createChild(parent, OMG_native); 
+      if (id!=null) {
+          type.setAttribute(OMG_kind,id); 
+      } 
+      type.setAttribute(OMG_name, "AbstractBase");
+      type.setAttribute("line", Integer.toString(token.beginLine));
+      type.setAttribute("column", Integer.toString(token.beginColumn));
+ }
+ | LOOKAHEAD(2) id=simple_declarator() 
+  {
+      Element el = createChild(parent, OMG_native);
+      el.setAttribute(OMG_name,id);
+      el.setAttribute("line", Integer.toString(token.beginLine));
+      el.setAttribute("column", Integer.toString(token.beginColumn));
+  }
+}
+
+String abstract_base_dcl():
+ {  initDom (); }
+{
+  "AbstractBase"  { return OMG_AbstractBaseCode; }
+
+}
+String abstract_base_type(Element type) :
+ {  initDom (); 
+    String id; }
+{
+
+ ( "CORBA::AbstractBase"{
+    id="CORBA::AbstractBase";} // utilizacion fuera del modulo CORBA.idl
+ | "AbstractBase"{
+    id="AbstractBase";})
+	{       
+    type.setAttribute(OMG_name, id);
+    type.setAttribute("line", Integer.toString(token.beginLine));
+    type.setAttribute("column", Integer.toString(token.beginColumn));
+    return OMG_AbstractBaseCode; } // utilizacion dentro del modulo CORBA.
+}
+
+
+
+/* Definitions of complex regular expressions follow */
+
+String identifier() :
+ {  initDom (); }
+{
+  <ID>
+  {
+    return processReservedNames(token.image);
+  }
+}
+
+void integer_literal(Element parent) :
+ {  initDom (); 
+    Element el = createChild(parent, OMG_integer_literal); }
+{
+    <OCTALINT>        {
+      el.setAttribute(OMG_value, token.image);
+      el.setAttribute("line", Integer.toString(token.beginLine));
+      el.setAttribute("column", Integer.toString(token.beginColumn)); }
+  | <DECIMALINT>      { 
+      el.setAttribute(OMG_value, token.image);
+      el.setAttribute("line", Integer.toString(token.beginLine));
+      el.setAttribute("column", Integer.toString(token.beginColumn)); }
+  | <HEXADECIMALINT>  { 
+      el.setAttribute(OMG_value, token.image);
+      el.setAttribute("line", Integer.toString(token.beginLine));
+      el.setAttribute("column", Integer.toString(token.beginColumn)); } 
+}
+
+void string_literal(Element parent) :
+ {  initDom (); 
+    Element el = createChild(parent, OMG_string_literal); }
+{
+  <STRING> { 
+    el.setAttribute(OMG_value, token.image.substring(1,token.image.length()-1));
+    el.setAttribute("line", Integer.toString(token.beginLine));
+    el.setAttribute("column", Integer.toString(token.beginColumn)); }
+}
+
+void wide_string_literal(Element parent) :
+ {  initDom (); 
+    Element el = createChild(parent, OMG_wide_string_literal); }
+{
+  <WSTRING> { 
+    el.setAttribute(OMG_value, token.image.substring(2,token.image.length()-1));
+    el.setAttribute("line", Integer.toString(token.beginLine));
+    el.setAttribute("column", Integer.toString(token.beginColumn)); }
+}
+
+void character_literal(Element parent) :
+ {  initDom (); 
+    Element el = createChild(parent, OMG_character_literal); }
+{
+    <CHARACTER> { 
+    el.setAttribute(OMG_value, token.image.substring(1,token.image.length()-1));
+    el.setAttribute("line", Integer.toString(token.beginLine));
+    el.setAttribute("column", Integer.toString(token.beginColumn)); }
+}
+
+void wide_character_literal(Element parent) :
+ {  initDom (); 
+    Element el = createChild(parent, OMG_wide_character_literal); }
+{
+  <WCHARACTER> { 
+    el.setAttribute(OMG_value, token.image.substring(2,token.image.length()-1));
+    el.setAttribute("line", Integer.toString(token.beginLine));
+    el.setAttribute("column", Integer.toString(token.beginColumn)); }
+}
+
+void fixed_pt_literal(Element parent) :
+ {  initDom (); 
+    Element el = createChild(parent, OMG_fixed_pt_literal); }
+{
+  <FIXED> { 
+    el.setAttribute(OMG_value, token.image.substring(0,token.image.length()-1));
+    el.setAttribute("line", Integer.toString(token.beginLine));
+    el.setAttribute("column", Integer.toString(token.beginColumn)); }
+}
+
+void floating_pt_literal(Element parent) :
+ {  initDom (); 
+    Element el = createChild(parent, OMG_floating_pt_literal); }
+{
+    <FLOATONE> { 
+        el.setAttribute(OMG_value, token.image);
+        el.setAttribute("line", Integer.toString(token.beginLine));
+        el.setAttribute("column", Integer.toString(token.beginColumn)); }
+  | <FLOATTWO> { 
+      el.setAttribute(OMG_value, token.image);
+      el.setAttribute("line", Integer.toString(token.beginLine));
+      el.setAttribute("column", Integer.toString(token.beginColumn)); }
+}
+
+TOKEN :
+{
+  <  ID : ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_"])* >
+| <  OCTALINT : "0" (["0"-"7"])* (["u","U","l","L"])? >
+| <  DECIMALINT : ["1"-"9"] (["0"-"9"])* (["u","U","l","L"])? >
+| <  HEXADECIMALINT : ("0x"|"0X") (["0"-"9","a"-"f","A"-"F"])+ (["u","U","l","L"])? >
+| <  FIXED : (  ( (["0"-"9"])+ "." (["0"-"9"])* )
+	      | ( (["0"-"9"])+ )
+	      | ( "." (["0"-"9"])+ )
+	     ) ["d","D"]>
+| <  FLOATONE : ((["0"-"9"])+ "." (["0"-"9"])* | (["0"-"9"])* "." (["0"-"9"])+)
+   (["e","E"] (["-","+"])? (["0"-"9"])+)? (["f","F","l","L"])? >
+| <  FLOATTWO : (["0"-"9"])+ ["e","E"] (["-","+"])?
+   (["0"-"9"])+ (["f","F","l","L"])? >
+| <  WCHARACTER : ("L"<CHARACTER>) | ("L'\\u" (["0"-"9","a"-"f","A"-"F"])+ "'") >
+| <  CHARACTER : "'"
+   (   (~["'","\\","\n","\r"])
+   | ("\\" (
+             ["n","t","v","b","r","f","a","\\","?","'","\""]
+            |
+             "0" (["0"-"7"])*
+            |
+             ["1"-"9"] (["0"-"9"])*
+            |
+             "x" (["0"-"9","a"-"f","A"-"F"])+
+           )
+     )
+   )
+   "'" >
+| <  WSTRING : "L" ("\""
+   ( ( ~["\"","\\","\n","\r"])
+   | ("\\" (
+             ["n","t","v","b","r","f","a","\\","?","'","\""]
+            |
+             "0" (["0"-"7"])+
+            |
+             ["1"-"9"] (["0"-"9"])*
+            |
+             ("x"|"u") (["0"-"9","a"-"f","A"-"F"])+
+           )
+     )
+   )*
+   "\"")+ >
+| <  STRING : ("\""
+   ( ( ~["\"","\\","\n","\r"])
+   | ("\\" (
+             ["n","t","v","b","r","f","a","\\","?","'","\""]
+            |
+             "0" (["0"-"7"])+
+            |
+             ["1"-"9"] (["0"-"9"])*
+            |
+             "x" (["0"-"9","a"-"f","A"-"F"])+
+           )
+     )
+   )*
+   "\"")+ >
+}
+
+// Rules for pragmas (ID, version, prefix)
+
+MORE:
+{
+  "#pragma" {image.setLength(0);} : in_pragma
+}
+
+<in_pragma> MORE:
+{
+    < (" "|"\t")* ("ID" | "version") (" "|"\t")* > : in_pragma2
+  | < (" "|"\t")* "prefix" (" "|"\t")* > {image.setLength(0);} : in_pragma3
+  | < (" "|"\t")* > : in_pragma4
+}
+
+<in_pragma3> TOKEN:
+{
+  <PRAGMA_PREFIX : <STRING> >
+  { String tok = image.toString();
+  	if (Idl2Xml.newFile(matchedToken.beginLine,true))
+  	{
+  		Idl2Xml.beginSpecificationScope();
+  		//Idl2Xml.beginScope();
+  	}
+  	if (tok.equals("\"\""))
+  	{
+  		if (!Idl2Xml.prefixes.empty()) 
+  		{
+  			Object [] pre = (Object [])Idl2Xml.prefixes.pop();
+  			pre[0] = tok.substring(1,tok.length()-1);
+  			Idl2Xml.prefixes.push(pre);
+  		}
+  	}
+  	else
+  	{
+  		Object [] scps = (Object [])Idl2Xml.scopes.peek();  
+    	Idl2Xml.prefixes.push(
+      											new Object[]{ tok.substring(1,tok.length()-1),
+                    				scps[0] }); 
+  	}
+  } : end_pragma3  
+}
+
+<end_pragma3> MORE :
+{
+  < (" "|"\t")* ("\n"|"\r"|"\r\n") > : DEFAULT
+}
+
+<in_pragma2> SPECIAL_TOKEN :
+{
+  <  PRAGMA: (~["\n","\r"])* ("\n"|"\r"|"\r\n")  >
+  {
+  	Object [] scps = (Object [])Idl2Xml.scopes.peek();
+    Element el = (Element)scps[0];
+    Element pragma = Idl2Xml.createChild(el, Idl2XmlNames.OMG_pragma);
+    pragma.setAttribute(Idl2XmlNames.OMG_pragma_value, image.toString());
+  } : DEFAULT
+}
+
+<in_pragma4> MORE:
+{
+   < (~["\n"])* "\n" >: DEFAULT
+}
+

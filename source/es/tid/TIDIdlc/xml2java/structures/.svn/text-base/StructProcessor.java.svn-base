@@ -1,0 +1,143 @@
+/*
+* MORFEO Project
+* http://www.morfeo-project.org
+*
+* Component: TIDIdlc
+* Programming Language: Java
+*
+* File: $Source$
+* Version: $Revision$
+* Date: $Date$
+* Last modified by: $Author$
+*
+* (C) Copyright 2004 Telefónica Investigación y Desarrollo
+*     S.A.Unipersonal (Telefónica I+D)
+*
+* Info about members and contributors of the MORFEO project
+* is available at:
+*
+*   http://www.morfeo-project.org/TIDIdlc/CREDITS
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; either version 2 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+*
+* If you want to use this software an plan to distribute a
+* proprietary application in any way, and you are not licensing and
+* distributing your source code under GPL, you probably need to
+* purchase a commercial license of the product.  More info about
+* licensing options is available at:
+*
+*   http://www.morfeo-project.org/TIDIdlc/Licensing
+*/ 
+
+package es.tid.TIDIdlc.xml2java.structures;
+
+import es.tid.TIDIdlc.xml2java.*;
+
+import java.io.*;
+import java.util.Vector;
+
+import org.w3c.dom.*;
+
+/**
+ * Generates Java for structure declarations.
+ */
+public abstract class StructProcessor
+{
+
+    /**
+     * @param buffer
+     *            String buffer where Java code is generated
+     * @param objectName
+     *            name of current attribute
+     * @param classType
+     *            DOM node of the type of objectName attribute
+     * @param indexes
+     *            Vector of sizes of arrays/sequences. It's a Long iff it
+     *            represents a fixed size item. It's a String iff it represents
+     *            a variable size item.
+     * @param isArray
+     *            Vector of Boolean. isArray[i] is true if indexes[i] represents
+     *            the size of an array (not a sequence).
+     */
+    public abstract void generateJava(StringBuffer buffer, String objectName,
+                                      Element classType, Vector indexes,
+                                      Vector isArray)
+        throws Exception;
+
+    public abstract void generateJava(String structName, StringBuffer buffer,
+                                      String objectName, Element classType,
+                                      Vector indexes, Vector isArray)
+        throws Exception;
+
+    protected String getIndexes(int num)
+    {
+        String s = "";
+        for (int i = 0; i < num; i++) {
+            s += "[i" + i + "]";
+        }
+        return s;
+    }
+
+    protected String initializeElement(Vector indexes, String target,
+                                       String type, int indexLevel,
+                                       boolean useIndexes,
+                                       boolean isBoundedString)
+    {
+        int finalIndex = indexes.size();
+        if (isBoundedString)
+            finalIndex--;
+        String s = "" + target;
+        for (int i = 0; i < indexLevel; i++) {
+            s += "[i" + i + "]";
+        }
+        s += " = new ";
+        s += type;
+        for (int i = indexLevel; i < finalIndex; i++) {
+            if ((i == indexLevel) && useIndexes) {
+                String v = (indexes.elementAt(i)).toString();
+                s += "[" + v + "]";
+            } else {
+                s += "[]";
+            }
+        }
+        return s;
+    }
+
+    protected void identation(StringBuffer buffer, int ident)
+    {
+        for (int i = 0; i < ident + 2; i++)
+            buffer.append("  ");
+    }
+
+    protected int numIndexes(String type)
+    {
+        byte[] array = type.getBytes();
+        int num = 0;
+        for (int i = 0; i < array.length; i++)
+            if (array[i] == '[')
+                num++;
+        return num;
+    }
+
+    protected String basicType(String type)
+    {
+        int num = type.indexOf('[');
+        if (num < 0)
+            return type;
+        else
+            return type.substring(0, num);
+    }
+
+}

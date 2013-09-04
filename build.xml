@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+* MORFEO Project
+* http://www.morfeo-project.org
+*
+* Component: TIDIdlc
+* Programming Language: XML
+*
+* File: $Source$
+* Version: $Revision: 288 $
+* Date: $Date: 2008-11-12 07:59:55 +0100 (Wed, 12 Nov 2008) $
+* Last modified by: $Author: avega $
+*
+* (C) Copyright 2004 Telefónica Investigación y Desarrollo
+*     S.A.Unipersonal (Telefónica I+D)
+*
+* Info about members and contributors of the MORFEO project
+* is available at:
+*
+*   http://www.morfeo-project.org/TIDIdlc/CREDITS
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; either version 2 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+*
+* If you want to use this software an plan to distribute a
+* proprietary application in any way, and you are not licensing and
+* distributing your source code under GPL, you probably need to
+* purchase a commercial license of the product.  More info about
+* licensing options is available at:
+*
+*   http://www.morfeo-project.org/TIDIdlc/Licensing
+-->
+
+
+<project name="TIDIdlc" default="all" basedir=".">
+	
+<property name="tididlc.debug" value="false"/>
+<property name="tididlc.encoding" value="iso8859-15"/>
+
+<property name ="tididlc.home" location="."/>	
+<property name="tididlc.bin.dir" location="./bin"/>
+<property name="tididlc.lib.dir" location="./lib"/>
+<property name="tididlc.doc.dir" location="./doc"/>
+<property name="tididlc.install.dir" location="./dist"/>
+<property name="tididlc.samples.dir" location="./samples"/>
+<property name="tididlc.build.dir" location="./build"/>
+
+<!-- set this import if JDK < 1.4 (xml libraries needed in the classpath)
+<import file="./build/XmlEndorsed/properties.xml"/>
+-->	
+	
+<!-- common definitions (libraries and paths, from the modules -->
+	
+<property name="tididlc.lib" location="${tididlc.lib.dir}/idlc.jar"/>
+<property name="tididlc.ant.lib" location="${tididlc.lib.dir}/idlc_ant.jar"/>
+<property name="tididlc.lib.cpp" location="${tididlc.lib.dir}/idl2cpp.jar"/>
+<property name="tididlc.lib.java" location="${tididlc.lib.dir}/idl2java.jar"/>
+
+<target name="all" depends="init">
+	<ant target="all" dir="source" inheritRefs="true" inheritAll="true"/>
+	<ant target="all" dir="tools" inheritRefs="true" inheritAll="true"/>
+</target>
+
+<target name="install" depends="all">
+	<delete dir="${tididlc.install.dir}"/>
+	<mkdir dir="${tididlc.install.dir}"/>
+
+	<copy file="CREDITS" todir="${tididlc.install.dir}"/>
+	<copy file="COPYING" todir="${tididlc.install.dir}"/>
+	<copy file="ChangeLog" todir="${tididlc.install.dir}"/>
+	<copy file="VERSION" todir="${tididlc.install.dir}"/>
+	<copy file="BUILT" todir="${tididlc.install.dir}"/>
+	<copy file="OMG_SPEC" todir="${tididlc.install.dir}"/>
+	<copy file="INSTALL" todir="${tididlc.install.dir}"/>
+	<copy file="BUGS" todir="${tididlc.install.dir}"/>
+
+	<mkdir dir="${tididlc.install.dir}/bin"/>
+	<copy todir="${tididlc.install.dir}/bin">
+		<fileset dir="${tididlc.bin.dir}"/>
+	</copy>
+	<chmod dir="${tididlc.install.dir}/bin" perm="a+x" includes="**/*.sh"/>
+	<move todir="${tididlc.install.dir}/bin">
+		<fileset dir="${tididlc.install.dir}/bin" includes="**/*.sh"/>
+		<mapper type="glob" from="*.sh" to="*"/>
+	</move>
+	
+	<mkdir dir="${tididlc.install.dir}/lib"/>
+	<copy todir="${tididlc.install.dir}/lib">
+		<fileset dir="${tididlc.lib.dir}" includes="**/*.jar"/>
+		<!-- Uncommend if JDK < 1.4
+		<fileset dir="${tididlc.jaxp.lib}"/>
+		-->
+	</copy>
+	
+	<mkdir dir="${tididlc.install.dir}/build"/>
+		<copy todir="${tididlc.install.dir}/build">
+			<fileset dir="${tididlc.build.dir}" includes="*.xml"/>		
+		</copy>
+	
+	<mkdir dir="${tididlc.install.dir}/samples"/>
+	<copy todir="${tididlc.install.dir}/samples">
+		<fileset dir="${tididlc.samples.dir}"/>
+	</copy>
+	
+
+</target>
+
+<target name="debug">
+	<property name="tididlc.debug" value="true"/>
+	<antcall target="all" inheritall="true" inheritrefs="true">
+		<param name="tididlc.debug" value="true"/>
+	</antcall>
+</target>
+
+<target name="init">
+	<echo message="java.home=${java.home}"/>
+	<echo message="tididlc.home=${tididlc.home}"/>
+	<mkdir dir="${tididlc.doc.dir}"/>
+	<mkdir dir="${tididlc.install.dir}"/>
+	<mkdir dir="${tididlc.lib.dir}"/>
+</target>
+
+<target name="clean">	
+	<delete dir="${tididlc.lib.dir}"/>	
+	<delete dir="${tididlc.install.dir}"/>	
+	<ant target="clean" dir="source" inheritrefs="true" inheritall="true"/>
+	<ant target="clean" dir="tools" inheritrefs="true" inheritall="true"/>	
+</target>
+
+</project>

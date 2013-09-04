@@ -1,0 +1,155 @@
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/tididlc/!svn/ver/328/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp
+END
+XmlException2Cpp.java
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlException2Cpp.java
+END
+XmlInterfaceStub2Cpp.java
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/tididlc/!svn/ver/326/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlInterfaceStub2Cpp.java
+END
+XmlValuetypeUtils2Cpp.java
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlValuetypeUtils2Cpp.java
+END
+XmlInterface2Cpp.java
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/tididlc/!svn/ver/310/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlInterface2Cpp.java
+END
+XmlTypedef2Cpp.java
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/tididlc/!svn/ver/328/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlTypedef2Cpp.java
+END
+XmlCppHolderGenerator.java
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/tididlc/!svn/ver/242/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlCppHolderGenerator.java
+END
+XmlInterfaceTie2Cpp.java
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/tididlc/!svn/ver/326/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlInterfaceTie2Cpp.java
+END
+XmlCppHelperGenerator.java
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/tididlc/!svn/ver/308/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlCppHelperGenerator.java
+END
+XmlEnum2Cpp.java
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/tididlc/!svn/ver/302/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlEnum2Cpp.java
+END
+XmlInterfaceSkeleton2Cpp.java
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/tididlc/!svn/ver/326/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlInterfaceSkeleton2Cpp.java
+END
+TypeManager.java
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/TypeManager.java
+END
+XmlHppExternalPOAGenerator.java
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/tididlc/!svn/ver/51/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlHppExternalPOAGenerator.java
+END
+XmlCppHeaderGenerator.java
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlCppHeaderGenerator.java
+END
+XmlExpr2Cpp.java
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/tididlc/!svn/ver/242/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlExpr2Cpp.java
+END
+XmlValuetype2Cpp.java
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/tididlc/!svn/ver/318/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlValuetype2Cpp.java
+END
+Xml2Cpp.java
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/tididlc/!svn/ver/31/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/Xml2Cpp.java
+END
+XmlHppExternalOperationsGenerator.java
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/tididlc/!svn/ver/282/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlHppExternalOperationsGenerator.java
+END
+XmlInterfaceUtils2Cpp.java
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/tididlc/!svn/ver/310/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlInterfaceUtils2Cpp.java
+END
+XmlType2Cpp.java
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/tididlc/!svn/ver/282/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlType2Cpp.java
+END
+XmlHppHeaderGenerator.java
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/tididlc/!svn/ver/252/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlHppHeaderGenerator.java
+END
+XmlHppExternalOBVGenerator.java
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/tididlc/!svn/ver/103/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlHppExternalOBVGenerator.java
+END
+XmlStruct2Cpp.java
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/tididlc/!svn/ver/242/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlStruct2Cpp.java
+END
+XmlModule2Cpp.java
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/tididlc/!svn/ver/126/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlModule2Cpp.java
+END
+XmlConst2Cpp.java
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/tididlc/!svn/ver/78/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlConst2Cpp.java
+END
+XmlUnion2Cpp.java
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/tididlc/!svn/ver/282/trunk/TIDIdlc/source/es/tid/TIDIdlc/xml2cpp/XmlUnion2Cpp.java
+END

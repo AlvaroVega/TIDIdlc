@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/tididlc/!svn/ver/320/trunk/TIDIdlc/build
+END
+Makefile.gcj
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/tididlc/!svn/ver/320/trunk/TIDIdlc/build/Makefile.gcj
+END
+build.bat
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/build/build.bat
+END
+tasks.xml
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/tididlc/!svn/ver/244/trunk/TIDIdlc/build/tasks.xml
+END
+build.sh
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/build/build.sh
+END
+properties.xml
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/tididlc/!svn/ver/244/trunk/TIDIdlc/build/properties.xml
+END
+.cvsignore
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/build/.cvsignore
+END

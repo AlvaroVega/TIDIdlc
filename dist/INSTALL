@@ -1,0 +1,185 @@
+============
+INSTALLATION
+============
+
+1. INSTALLATION FROM BINARY DISTRIBUTION
+========================================
+
+
+1.1 Prerequisits
+----------------
+
+Before trying to run TIDIdlc make sure you have installed the
+following software packages:
+
+ · JDK 1.4 (Java(TM) 2 Runtime Environment)
+ · Xerces
+ 
+
+1.2 Installation
+----------------
+
+Download the zipped binaries in the applications directory <install_dir>
+and unzip with:
+
+ $ tar xfvz TIDIdlc_X.Y.Z.tgz 
+or 
+ $ gzip -d TIDIdlc_X.Y.Z.tgz | tar xfv
+
+
+You can download directly the TIDIdlc installation binaries from MORFEO Forge
+at: http://forge.morfeo-project.org/frs/?group_id=10 
+
+
+1.3 Execution
+-------------
+
+To execute TIDIdlc scripts in the shell, next environment variables should be
+set.
+
+· For Unix
+  --------
+
+  export JAVA_HOME=<path to jdk>
+  export TIDIDLC_HOME=<install_dir>/TIDIdlc
+  export PATH=$PATH:$TIDIDLC_HOME/bin/
+  
+  Runs with: 
+   - IDL to C++ compiler 
+       $TIDIDLC_HOME/bin/idl2cpp.sh
+
+   - IDL to Java compiler 
+       $TIDIDLC_HOME/bin/idl2java.sh
+
+· For Windows
+  -----------
+
+  SET JAVA_HOME=<path to jdk>
+  SET TIDIDLC_HOME=<install_dir>\TIDIdlc
+  SET PATH=%PATH;%TIDIDLC_HOME%\bin
+
+   - IDL to C++ compiler 
+       $TIDIDLC_HOME\bin\idl2cpp.bat
+
+   - IDL to Java compiler 
+       $TIDIDLC_HOME\bin\idl2java.bat
+
+
+
+2. INSTALLATION FROM SOURCE DISTRIBUTION
+========================================
+
+
+2.1 Prerequisits
+----------------
+
+For the compilation of TIDIdlc next software is needed:
+
+    · Sun Java J2SE SDK 1.4 or later
+    · Subversion Client
+    · Apache Ant 1.6 or later
+
+Main Linux distributions (Debian, Ubuntu, RedHat, ...) have available 
+installation packages for this components.
+
+Optionally, TIDIdlc can be compiled with the Eclipse IDE.
+
+
+· Needed Software Installation under Debian & Ubuntu Linux
+  --------------------------------------------------------
+ 
+  - For Ubuntu Linux:
+
+    $ sudo apt-get install subversion ant sun-java5-jdk
+    <input user's password>
+
+  - For Debian:
+    $ su
+    <input root's password>
+    $ apt-get install subversion ant sun-java5-jdk
+
+  Also, Other versions of Sun's JDK can also be installed from Java at Sun 
+  MicroSystems.
+
+
+· Java Virtual Machine installation from binaries
+  -----------------------------------------------
+
+  Download the installation zipped file from Java at Sun MicroSystems. 
+  You should create a directory at your $HOME directory where the installation
+  will be done:
+
+  $ mkdir $HOME/java
+
+  Unzip the installation binary file (for examle, jdk-1_5_0_07-linux-586.bin):
+
+  $ cd $HOME/java
+  $ chmod +x jdk-1_5_0_07-linux-586.bin
+  $ ./jdk-1_5_0_07-linux-586.bin
+
+  Follow the installation program instructions to install the Java Development
+  Kit.
+
+  Finally, delete the downloaded file:
+
+  $ rm jdk-1_5_0_07-linux-586.bin
+
+
+2.2 TIDIdlc Compilation
+-----------------------
+
+· Source Code Download
+  --------------------
+
+  First of all, create a work directory where the source code will be   
+  downloaded:
+
+  $ cd <workspace>
+  $ mkdir Morfeo
+  $ cd Morfeo
+
+  Download the sorce code from the TIDIdlc Project's Subversion repository:
+
+  $ svn checkout https://svn.morfeo-project.org/svn/tididlc/trunk/TIDIdlc
+
+  The Subversion client would ask for accept the server's certificate. In this 
+  case, Accept it.
+
+
+· Compilation with Ant
+  --------------------
+
+  Go to the TIDIdlc directory where the source code has been downloaded and 
+  compile it with the command:
+
+  $ cd TIDIdlc
+  $ ant install
+
+  NOTE: Change the PATH if you want to compile TIDIdlc with other JDK version
+
+  You can check the JDK version configured in the environment with:
+
+  $ java -version
+
+
+2.3 TIDIdlc Installation
+------------------------
+
+· Installation from compiled code
+  -------------------------------
+
+  Once compiled TIDIdlc, from the source code directory (TIDIdlc), copy the 
+  directory dist with the generated binaries of TIDIdlc to the usual    
+  applications  directory (for example /opt):
+
+  $ cp -r dist <install_dir>/TIDIdlc_X.Y
+
+  In Linux, update the execution flags of the scripts to launch the compiler:
+
+  chmod +x <install_dir>/TIDIdlc_X.Y/bin/*
+
+
+2.4 Execution
+-------------
+
+  Idem "1.3 Execution" previous section.

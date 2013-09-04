@@ -1,0 +1,47 @@
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/samples/output_java/Hello
+END
+helloWorld.java
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/samples/output_java/Hello/helloWorld.java
+END
+helloWorldHelper.java
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/samples/output_java/Hello/helloWorldHelper.java
+END
+helloWorldPOATie.java
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/samples/output_java/Hello/helloWorldPOATie.java
+END
+_helloWorldStub.java
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/samples/output_java/Hello/_helloWorldStub.java
+END
+helloWorldOperations.java
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/samples/output_java/Hello/helloWorldOperations.java
+END
+helloWorldHolder.java
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/samples/output_java/Hello/helloWorldHolder.java
+END
+helloWorldPOA.java
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/samples/output_java/Hello/helloWorldPOA.java
+END

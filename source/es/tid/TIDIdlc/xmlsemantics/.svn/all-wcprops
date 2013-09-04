@@ -1,0 +1,107 @@
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/tididlc/!svn/ver/242/trunk/TIDIdlc/source/es/tid/TIDIdlc/xmlsemantics
+END
+TypeHandler.java
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/source/es/tid/TIDIdlc/xmlsemantics/TypeHandler.java
+END
+Union.java
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/tididlc/!svn/ver/242/trunk/TIDIdlc/source/es/tid/TIDIdlc/xmlsemantics/Union.java
+END
+XmlCppSemanticType.java
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/source/es/tid/TIDIdlc/xmlsemantics/XmlCppSemanticType.java
+END
+SemanticException.java
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/source/es/tid/TIDIdlc/xmlsemantics/SemanticException.java
+END
+RepositoryIdManager.java
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/tididlc/!svn/ver/28/trunk/TIDIdlc/source/es/tid/TIDIdlc/xmlsemantics/RepositoryIdManager.java
+END
+TypedefManager.java
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/tididlc/!svn/ver/28/trunk/TIDIdlc/source/es/tid/TIDIdlc/xmlsemantics/TypedefManager.java
+END
+UnionCase.java
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/source/es/tid/TIDIdlc/xmlsemantics/UnionCase.java
+END
+ValuetypeInheritance.java
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/source/es/tid/TIDIdlc/xmlsemantics/ValuetypeInheritance.java
+END
+IdlConstants.java
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/tididlc/!svn/ver/28/trunk/TIDIdlc/source/es/tid/TIDIdlc/xmlsemantics/IdlConstants.java
+END
+UnionManager.java
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/tididlc/!svn/ver/28/trunk/TIDIdlc/source/es/tid/TIDIdlc/xmlsemantics/UnionManager.java
+END
+XmlJavaSemanticType.java
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/tididlc/!svn/ver/109/trunk/TIDIdlc/source/es/tid/TIDIdlc/xmlsemantics/XmlJavaSemanticType.java
+END
+XmlSemantics.java
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/tididlc/!svn/ver/242/trunk/TIDIdlc/source/es/tid/TIDIdlc/xmlsemantics/XmlSemantics.java
+END
+Scope.java
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/source/es/tid/TIDIdlc/xmlsemantics/Scope.java
+END
+UnionCpp.java
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/source/es/tid/TIDIdlc/xmlsemantics/UnionCpp.java
+END
+XmlType.java
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/source/es/tid/TIDIdlc/xmlsemantics/XmlType.java
+END
+InterfaceInheritance.java
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/source/es/tid/TIDIdlc/xmlsemantics/InterfaceInheritance.java
+END
+UnionJava.java
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/source/es/tid/TIDIdlc/xmlsemantics/UnionJava.java
+END

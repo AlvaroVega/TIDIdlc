@@ -1,0 +1,17 @@
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/tididlc/!svn/ver/330/trunk/TIDIdlc/source
+END
+.cvsignore
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/tididlc/!svn/ver/2/trunk/TIDIdlc/source/.cvsignore
+END
+build.xml
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/tididlc/!svn/ver/242/trunk/TIDIdlc/source/build.xml
+END
