@@ -1,7 +1,0 @@
-//IDl example
-
-module Hello {
-	interface helloWorld {
-		string sayHello ();
-	};
-};
