@@ -3,7 +3,7 @@ install:
   - sudo apt-get update
   - DEBIAN_FRONTEND=noninteractive sudo apt-get install -y ant
 script:
-  - ant build
+  - ant all
 jdk:
   - oraclejdk7
 
